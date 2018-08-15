@@ -1,3 +1,6 @@
+extern crate server;
+use server::ThreadPool;
+
 use std::io::prelude::*;
 use std::net::TcpStream;
 use std::net::TcpListener;
@@ -7,10 +10,14 @@ use std::time::Duration;
 
 fn main() {
     let listener = TcpListener::bind("localhost:7878").unwrap();
+    let pool = ThreadPool::new(4);
 
     for stream in listener.incoming() {
         let stream = stream.unwrap();
-        handle_connection(stream);
+
+        pool.execute(|| {
+            handle_connection(stream);
+        });
     }
 }
 
