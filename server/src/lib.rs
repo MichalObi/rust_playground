@@ -10,7 +10,7 @@ enum Message {
 
 pub struct ThreadPool {
     workers: Vec<Worker>,
-    sender: mpsc::Sender<Job>
+    sender: mpsc::Sender<Message>,
 }
 
 trait FnBox {
