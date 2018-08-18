@@ -26,11 +26,13 @@ impl<F: FnOnce()> FnBox for F {
 type Job = Box<FnBox + Send + 'static>;
 
 impl ThreadPool {
-    /// Create a brand new ThreadPool
+
+    /// Create a brand new ThreadPool.
     ///
     /// # Panics
     ///
     /// if size is 0 fn new will panic!
+
     pub fn new(size: usize) -> ThreadPool {
         assert!(size > 0);
 
@@ -50,6 +52,10 @@ impl ThreadPool {
         }
     }
 
+    /// Execute closure send to worker.
+    ///
+    /// Take closure as new job, also send proper msg to worker.
+
     pub fn execute<F>(&self, f:F)
      where F:FnOnce() + Send + 'static
      {
@@ -58,6 +64,8 @@ impl ThreadPool {
          self.sender.send(Message::NewJob(job)).unwrap();
      }
 }
+
+/// Run code when ThreadPool go out of scope e.g. program stopped.
 
 impl Drop for ThreadPool {
     fn drop(&mut self) {
