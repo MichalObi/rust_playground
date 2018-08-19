@@ -13,3 +13,7 @@ cargo check -> code correctness checks
 ```
 cargo dock --open -> open server code documentation
 ```
+
+```
+cargo test (-- --nocapture) -> run tests (with output from execution)
+```

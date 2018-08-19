@@ -119,3 +119,42 @@ impl Worker {
         }
     }
 }
+
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn threadpool_size() {
+        use ThreadPool;
+        let test_threadpool_size = 4;
+        let pool = ThreadPool::new(test_threadpool_size);
+        let threadpool_workers_size = pool.workers.len();
+
+        println!("ThreadPool with test size {} has {} workers.",
+        test_threadpool_size, threadpool_workers_size);
+        assert_eq!(test_threadpool_size, threadpool_workers_size);
+    }
+
+    /// Test if threadpool closure execution will change variable value on execution
+
+    #[test]
+    fn threadpool_execute() {
+        fn test_fn(test_msg: &mut bool) -> &bool {
+            *test_msg = true;
+            return test_msg;
+        }
+
+        use ThreadPool;
+        let test_threadpool_size = 4;
+        let pool = ThreadPool::new(test_threadpool_size);
+        let mut was_test_fn_executed = false;
+
+        println!("Value BEFORE execution: {}", was_test_fn_executed);
+
+        pool.execute(move || {
+            test_fn(&mut was_test_fn_executed);
+            println!("Value AFTER execution: {}", was_test_fn_executed);
+            assert_eq!(was_test_fn_executed, true);
+        });
+    }
+}
