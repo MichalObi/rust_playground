@@ -4,3 +4,4 @@ version = "0.1.0"
 authors = ["MichalObi <ndwz123@gmail.com>"]
 
 [dependencies]
+mockito = "0.12.0"
