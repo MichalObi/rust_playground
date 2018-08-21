@@ -140,7 +140,7 @@ mod tests {
     #[test]
     fn threadpool_execute() {
         fn test_fn(test_msg: &mut bool) -> &bool {
-            *test_msg = true;
+            *test_msg = !*test_msg;
             return test_msg;
         }
 
