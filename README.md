@@ -23,5 +23,5 @@ cargo test (-- --nocapture) -> run unit tests (with output from execution)
 ```
 
 ```
-cargo test --test integration_test -> run integration tests
+cargo test --test integration_test (-- --nocapture) -> run integration tests
 ```
