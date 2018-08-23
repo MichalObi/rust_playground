@@ -2,15 +2,16 @@ extern crate server;
 extern crate mockito;
 
 mod tests {
+    use std::io::prelude::*;
     use std::net::{IpAddr, Ipv4Addr, TcpStream, TcpListener};
     use server::ThreadPool;
     use mockito::mock;
 
-    fn setup() {
-        let server_address: &'static str = "127.0.0.1:7878";
+    #[test]
+    fn test_server_setup() {
+        let server_address = "127.0.0.1:7878";
         let listener: TcpListener = TcpListener::bind(server_address).unwrap();
-        let stream: TcpStream = TcpStream::connect(server_address)
-                                          .expect("Couldn't connect to the server...");
+        let stream: TcpStream = TcpStream::connect(server_address).unwrap();
 
         assert_eq!(stream.local_addr().unwrap().ip(),
                    IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)));
@@ -20,12 +21,34 @@ mod tests {
     }
 
     #[test]
-    fn test_setup() {
-        setup();
-    }
+    fn test_main_route() {
+        let server_address = "127.0.0.1:7879";
+        let listener: TcpListener = TcpListener::bind(server_address).unwrap();
+        let pool = ThreadPool::new(4);
+        let main_mock = mock("GET", "/").create();
 
-    #[test]
-    fn test_main_route() {}
+        TcpStream::connect(server_address).unwrap();
+
+        for stream in listener.incoming()  {
+            let mut stream = stream.unwrap();
+
+            pool.execute(|| {
+                handle_connection(stream);
+            });
+        }
+
+        fn handle_connection(mut stream:TcpStream) {
+            let main_route_get = "GET / HTTP/1.1\r\n\r\n";
+            stream.write_all(main_route_get.as_bytes()).unwrap();
+
+            let mut response = String::new();
+
+            stream.read_to_string(&mut response).unwrap();
+            stream.flush().unwrap();
+        }
+
+        main_mock.assert();
+    }
 
     #[test]
     fn test_sleep_route() {}
