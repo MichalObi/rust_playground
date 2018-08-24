@@ -25,7 +25,6 @@ mod tests {
         let server_address = "127.0.0.1:7879";
         let listener: TcpListener = TcpListener::bind(server_address).unwrap();
         let pool = ThreadPool::new(4);
-        let main_mock = mock("GET", "/").create();
 
         TcpStream::connect(server_address).unwrap();
 
@@ -38,16 +37,19 @@ mod tests {
         }
 
         fn handle_connection(mut stream:TcpStream) {
-            let main_route_get = "GET / HTTP/1.1\r\n\r\n";
-            stream.write_all(main_route_get.as_bytes()).unwrap();
+            let main_mock = mock("GET", "/").create();
+            let main_route_get = "GET / HTTP/1.0\r\nHost: 127.0.0.1:7878\r\n\r\n";
+
+            stream.flush().unwrap();
 
             let mut response = String::new();
 
             stream.read_to_string(&mut response).unwrap();
-            stream.flush().unwrap();
-        }
+            stream.write(main_route_get.as_bytes()).unwrap();
 
-        main_mock.assert();
+            println!("Response: {}", response);
+            main_mock.assert();
+        }
     }
 
     #[test]
