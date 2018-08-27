@@ -4,12 +4,18 @@ extern crate mockito;
 mod tests {
     use std::net::{IpAddr, Ipv4Addr, TcpStream, TcpListener, SocketAddr};
     use server::ThreadPool;
-    use mockito::mock;
-    use std::io;
     use std::io::prelude::*;
+    use mockito::mock;
     use std::io::Write;
-    use std::io::BufReader;
     use std::io::BufWriter;
+
+    fn connect_and_send_request() {
+        let stream = TcpStream::connect("127.0.0.1:7879").unwrap();
+        let mut writer = BufWriter::new(stream);
+        let s = b"GET / HTTP/1.1\r\n\r\n";
+        writer.write(s).unwrap();
+        writer.flush().unwrap();
+    }
 
     #[test]
     fn test_server_setup() {
@@ -33,51 +39,24 @@ mod tests {
         let listener: TcpListener = TcpListener::bind(&server_address[..]).unwrap();
         let pool = ThreadPool::new(4);
 
-         let stream = TcpStream::connect("127.0.0.1:7879").unwrap();
-         let stream_clone = stream.try_clone().unwrap();
-
-         let mut reader = BufReader::new(stream);
-         let mut writer = BufWriter::new(stream_clone);
-
-         let mut s = String::from("\
-              GET / HTTP/1.1\r\n\
-              Host: 127.0.0.1:7879\r\n\
-              \r\n\
-          ");
-
-         println!("Request: {}", s);
-
-         let mut response = String::new();
-         io::stdin().read_line(&mut s).unwrap();
-
-         writer.write(s.as_bytes()).unwrap();
-         writer.flush().unwrap();
-
-         reader.read_line(&mut response).unwrap();
-         println!("Response: {}", response.trim());
+        connect_and_send_request();
 
         for stream in listener.incoming()  {
             let mut stream = stream.unwrap();
 
-            pool.execute(move || {
+            pool.execute(|| {
+                let main_mock = mock("GET", "/").create();
                 handle_connection(stream);
+                println!("Main mock {}", main_mock);
+                main_mock.assert();
             });
         }
 
-        fn handle_connection(stream: TcpStream) {
-            println!("here!");
-            let stream_clone = stream.try_clone().unwrap();
-            let mut reader = BufReader::new(stream);
-            let mut writer = BufWriter::new(stream_clone);
-
-            let main_mock = mock("GET", "/").create();
-            let mut s = String::new();
-
-            reader.read_line(&mut s).unwrap();
-            writer.write(s.as_bytes()).unwrap();
-
-            writer.flush().unwrap();
-            main_mock.assert();
+        fn handle_connection(mut stream: TcpStream) {
+            let mut response = [0; 512];
+            stream.read(&mut response).unwrap();
+            stream.flush().unwrap();
+            println!("Request: {}", String::from_utf8_lossy(&response[..]));
         }
     }
 
