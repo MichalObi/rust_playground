@@ -1,11 +1,9 @@
 extern crate server;
-extern crate mockito;
 
 mod tests {
     use std::net::{IpAddr, Ipv4Addr, TcpStream, TcpListener, SocketAddr};
     use server::ThreadPool;
     use std::io::prelude::*;
-    use mockito::mock;
     use std::io::Write;
     use std::io::BufWriter;
 
@@ -45,10 +43,7 @@ mod tests {
             let mut stream = stream.unwrap();
 
             pool.execute(|| {
-                let main_mock = mock("GET", "/").create();
                 handle_connection(stream);
-                println!("Main mock {}", main_mock);
-                main_mock.assert();
             });
         }
 
