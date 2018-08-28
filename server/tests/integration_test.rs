@@ -7,11 +7,21 @@ mod tests {
     use std::io::Write;
     use std::io::BufWriter;
 
-    fn connect_and_send_request() {
+    fn connect_and_send_request(route: &'static str) {
         let stream = TcpStream::connect("127.0.0.1:7879").unwrap();
         let mut writer = BufWriter::new(stream);
-        let s = b"GET / HTTP/1.1\r\n\r\n";
-        writer.write(s).unwrap();
+
+        let s;
+
+        if route == "main" {
+            s = "GET / HTTP/1.1\r\n\r\n";
+        } else if route == "sleep" {
+            s = "GET /sleep HTTP/1.1\r\n\r\n";
+        } else {
+            s = "GET /xxx HTTP/1.1\r\n\r\n";
+        }
+
+        writer.write(s.as_bytes()).unwrap();
         writer.flush().unwrap();
     }
 
@@ -37,7 +47,9 @@ mod tests {
         let listener: TcpListener = TcpListener::bind(&server_address[..]).unwrap();
         let pool = ThreadPool::new(4);
 
-        connect_and_send_request();
+        let req_route: &'static str = "main";
+
+        connect_and_send_request(req_route);
 
         for stream in listener.incoming()  {
             let mut stream = stream.unwrap();
@@ -48,10 +60,10 @@ mod tests {
         }
 
         fn handle_connection(mut stream: TcpStream) {
-            let mut response = [0; 512];
-            stream.read(&mut response).unwrap();
-            stream.flush().unwrap();
-            println!("Request: {}", String::from_utf8_lossy(&response[..]));
+            let mut buffer = [0; 512];
+            stream.read(&mut buffer).unwrap();
+            let get = b"GET / HTTP/1.1\r\n";
+            assert_eq!(buffer.starts_with(get), true);
         }
     }
 
