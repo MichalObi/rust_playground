@@ -6,6 +6,7 @@ mod tests {
     use std::io::prelude::*;
     use std::io::Write;
     use std::io::BufWriter;
+    use std::mem::drop;
 
     fn connect_and_send_request(route: &'static str) {
         let stream = TcpStream::connect("127.0.0.1:7879").unwrap();
@@ -60,10 +61,12 @@ mod tests {
         }
 
         fn handle_connection(mut stream: TcpStream) {
-            let mut buffer = [0; 512];
-            stream.read(&mut buffer).unwrap();
             let get = b"GET / HTTP/1.1\r\n";
-            assert_eq!(buffer.starts_with(get), true);
+            let mut buffer = [0; 512];
+
+            stream.read(&mut buffer).unwrap();
+            let result = assert_eq!(buffer.starts_with(get), true);
+            drop(result);
         }
     }
 
